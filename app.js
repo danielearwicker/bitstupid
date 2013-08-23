@@ -1,14 +1,9 @@
 var express = require('express');
-var redis = require('redis').createClient();
 var views = require('./views');
 
 var app = express();
 
 app.use("/img", express.static('img'));
-
-app.get('/version', function(req, res) {
-    res.send('1');
-});
 
 app.get('/', function(req, res) {
     res.send(views.home({ age: 41 }));
@@ -18,7 +13,7 @@ app.get('/togglz/create', function(req, res) {
     res.send(views.home({ age: 41 }));
 });
 
-
+/*
 app.get('/:username/:id/state', function(req, res) {
 
     var key = req.query.username + ':' + req.query.id;
@@ -69,6 +64,7 @@ app.post('/:username/:id/state', function(req, res) {
         }
     );
 });
+*/
 
 app.listen(80);
 
