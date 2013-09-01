@@ -3,6 +3,7 @@ var fs = require('fs');
 var path = require('path');
 var AWS = require('aws-sdk');
 var views = require('./views');
+var gm = require('gm');
 
 var log = console.log;
 // var log = function() {}
@@ -93,25 +94,40 @@ app.post('/images', function(req, res) {
         }
     };
 
+    var localIfGood = function(handler) {
+        return function(err, data) {
+            if (err) {
+                log(err.message);
+                finished();
+            } else {
+                handler(data);
+            }
+        };
+    };
+
     [0, 1].forEach(function(image) {
-        fs.readFile(req.files['image' + image].path, ifGood(res, function(body) {
+        fs.readFile(req.files['image' + image].path, localIfGood(function(body) {
 
             var contentType = req.files['image' + image].type;
             if (contentType &&
                 contentType.match(/^image\//) &&
                 (body.length != 0)) {
 
-                s3.putObject({
-                        Bucket: 'bitstupid-images',
-                        Body: body,
-                        ContentType: contentType,
-                        Key: 'creating-' + username + '-' + image
-                    },
-                    ifGood(res, finished)
-                );
+                gm(body).resize(96, 96).toBuffer(localIfGood(function(resizedBody) {
+                    s3.putObject({
+                            Bucket: 'bitstupid-images',
+                            Body: resizedBody,
+                            ContentType: contentType,
+                            Key: 'creating-' + username + '-' + image
+                        },
+                        localIfGood(finished)
+                    );
+                }));
+
             } else {
                 finished();
             }
+
         }));
     });
 });
