@@ -1,14 +1,18 @@
 var mysql = require('mysql');
+
+var log = require('./log');
 var config = require('./config');
 
-var connection = mysql.createConnection(config.mysql);
+log('msql config', config.mysql);
+
+var connection = log.wrap('mysql', mysql.createConnection(config.mysql));
 
 connection.query('SELECT * from users', function(err, users) {
     if (err) {
-        console.log(err);
+        log(err);
         connection.end();
     } else {
-        console.log(users);
+        log(users);
         connection.end();
     }
 });

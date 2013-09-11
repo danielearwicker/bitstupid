@@ -1,41 +1,19 @@
 var express = require('express');
 var fs = require('fs');
 var AWS = require('aws-sdk');
-var views = require('./views');
-var config = require('./config');
 var gm = require('gm');
 
-var log = console.log;
-// var log = function() {}
+var log = require('./log');
+var config = require('./config');
+var views = require('./views');
 
 AWS.config.update(config.aws);
-
 log(AWS.config.credentials);
 
-// Object.keys doesn't get inherited keys
-var getAllKeys = function(obj) {
-    var keys = [];
-    for (var key in obj) {
-        keys.push(key);
-    }
-    return keys;
-};
-
-// Wrap S3 API in verbose logging
-var actualS3 = new AWS.S3({ apiVersion: '2006-03-01' });
-var s3 = {};
-getAllKeys(actualS3).forEach(function(key) {
-    s3[key] = function() {
-        log('Calling Amazon S3: ' + key);
-        log(arguments);
-        actualS3[key].apply(actualS3, arguments);
-    };
-});
+var s3 = log.wrap('AWS.S3.', new AWS.S3({ apiVersion: '2006-03-01' }));
 
 var app = express();
-
 // app.use("/static", express.static('static'));
-
 app.use(express.bodyParser());
 
 // Utility that standardising error handling
@@ -158,5 +136,5 @@ app.post('/:username/:id/state', function(req, res) {
 });
 */
 
-app.listen(80);
+app.listen(3000);
 
