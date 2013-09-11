@@ -1,15 +1,15 @@
 var express = require('express');
 var fs = require('fs');
-var path = require('path');
 var AWS = require('aws-sdk');
 var views = require('./views');
+var config = require('./config');
 var gm = require('gm');
 
 var log = console.log;
 // var log = function() {}
 
-// Load AWS configuration
-AWS.config.loadFromPath(path.join(__dirname, '../../aws-config.json'));
+AWS.config.update(config.aws);
+
 log(AWS.config.credentials);
 
 // Object.keys doesn't get inherited keys
@@ -138,37 +138,6 @@ app.get('/:username/:id/state', function(req, res) {
     var key = req.params.username + ':' + req.params.id;
 
     log(req);
-
-/*    redis.llen(key, function(err, count) {
-        if (err) {
-            res.send(500, err.message);
-        } else {
-            var skip = Math.min(req.query.skip || 0, count);
-            var take = Math.min(count - skip, req.query.take || 1);
-            if (take == 0) {
-                res.send({
-                    count: count,
-                    offset: skip,
-                    changes: [],
-                    state: !!(count % 2)
-                });
-            } else {
-                redis.lrange(key, skip, skip + take - 1, function(err, changes) {
-                    if (err) {
-                        res.send(500, err.message);
-                    } else {
-                        res.send({
-                            count: count,
-                            offset: skip,
-                            changes: changes,
-                            state: !!(count % 2)
-                        });
-                    }
-                });
-            }
-        }
-    });
-    */
 });
 
 /*
