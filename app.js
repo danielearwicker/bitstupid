@@ -2,6 +2,7 @@ var express = require('express');
 var fs = require('fs');
 var AWS = require('aws-sdk');
 var gm = require('gm');
+var Q = require('q');
 
 var log = require('./log');
 var config = require('./config');
@@ -12,21 +13,16 @@ log(AWS.config.credentials);
 
 var s3 = log.wrap('AWS.S3.', new AWS.S3({ apiVersion: '2006-03-01' }));
 
-var app = express();
-// app.use("/static", express.static('static'));
-app.use(express.bodyParser());
-
-// Utility that standardising error handling
-var ifGood = function(res, handler) {
-    return function(err, data) {
-        if (err) {
-            log(err.message);
-            res.send(500, err.message);
-        } else {
-            handler(data);
-        }
-    };
+var q = {
+    headObject: Q.nbind(s3.headObject, s3),
+    getObject: Q.nbind(s3.getObject, s3),
+    putObject: Q.nbind(s3.putObject, s3),
+    readFile: Q.nbind(fs.readFile, fs)
 };
+
+var app = express();
+app.use(express.bodyParser());
+app.use("/static", express.static('static'));
 
 var username = 'danielearwicker';
 
@@ -34,78 +30,74 @@ app.get('/', function(req, res) {
     res.send(views.home({ age: 41 }));
 });
 
-app.get('/create', function(req, res) {
-    var images = {};
-    [0, 1].forEach(function(image) {
-        var key = 'creating-' + username + '-' + image;
-        s3.headObject({
+var logErrors = function(handler) {
+    return function(req, res) {
+        return handler(req, res).catch(function(err) {
+            res.send(500, JSON.stringify(err));
+        });
+    };
+};
+
+app.get('/create', logErrors(function(req, res) {
+    return Q.all([0, 1].map(function(image) {
+        var key = 'creating-' + username + '-'+ image;
+        return q.headObject({
             Bucket: 'bitstupid-images',
             Key: key
-        }, function(err) {
-            images[image] = err ? null : key;
-            if (Object.keys(images).length == 2) {
-                res.send(views.create({ images: images }));
-            }
+        }).then(function() {
+            return key;
         });
+    })).then(function(images) {
+        res.send(views.create({ images: images }));
     });
-});
+}));
 
-app.get('/images/:imgkey', function(req, res) {
-    s3.getObject({
+app.get('/images/:imgkey', logErrors(function(req, res) {
+    return q.getObject({
         Bucket: 'bitstupid-images',
         Key: req.params.imgkey
-    },
-    ifGood(res, function(data) {
+    }).then(function(data) {
         res.set('Content-Type', data.ContentType);
         res.send(data.Body);
-    }));
-});
+    });
+}));
 
 app.post('/images', function(req, res) {
-    var finishedCount = 0;
+    return Q.all([0, 1].map(function(imageNumber) {
 
-    var finished = function() {
-        finishedCount++;
-        if (finishedCount == 2) {
-            log('Both stores completed successfully');
-            res.redirect('create');
-        }
-    };
+        var file = req.files['image' + imageNumber];
 
-    var localIfGood = function(handler) {
-        return function(err, data) {
-            if (err) {
-                log(err.message);
-                finished();
-            } else {
-                handler(data);
-            }
-        };
-    };
+        return q.readFile(file.path).then(function(image) {
 
-    [0, 1].forEach(function(image) {
-        fs.readFile(req.files['image' + image].path, localIfGood(function(body) {
+            if (file.type && file.type.match(/^image\//) && (image.length != 0)) {
 
-            var contentType = req.files['image' + image].type;
-            if (contentType &&
-                contentType.match(/^image\//) &&
-                (body.length != 0)) {
+                var d = Q.defer();
+                gm(image).resize(96, 96).toBuffer(d.makeNodeResolver());
 
-                gm(body).resize(96, 96).toBuffer(localIfGood(function(resizedBody) {
-                    s3.putObject({
-                            Bucket: 'bitstupid-images',
-                            Body: resizedBody,
-                            ContentType: contentType,
-                            Key: 'creating-' + username + '-' + image
-                        },
-                        localIfGood(finished)
-                    );
-                }));
+                return d.promise.then(function(resizedImage) {
+                    return q.putObject({
+                        Bucket: 'bitstupid-images',
+                        Body: resizedImage,
+                        ContentType: file.type,
+                        Key: 'creating-' + username + '-' + imageNumber
+                    });
+                });
 
             } else {
-                finished();
+                log('File upload is wrong type');
+                return false;
             }
+        });
 
+    })).then(function() {
+
+        res.redirect('create');
+
+    }).fin(function() {
+        return Q.all([0, 1].map(function(imageNumber) {
+            var path = req.files['image' + imageNumber].path;
+            log('Deleting temporary file: ' + path);
+            return q.unlink(path);
         }));
     });
 });

@@ -4,7 +4,7 @@ var Q = require("q");
 var log = require('./log');
 var config = require('./config');
 
-var enablePooling = false;
+var enablePooling = true;
 
 var pool = enablePooling ? mysql.createPool(config.mysql) : {
     getConnection: function(done) {
@@ -30,16 +30,25 @@ exports.query = function(sql, params) {
     });
 };
 
-exports.create = function(table, params, done) {
-    var sql = 'INSERT INTO ' + mysql.escapeId(table) + ' SET ?';
-    return exports.query(sql, params).then(function(result) {
-        return result.insertId;
-    });
+var sqlTemplatePattern = /(\[\])/g;
+
+exports.sql = function(sql, ids) {
+    return sql.split(sqlTemplatePattern).map(function(p, i) {
+        return i%2 ? mysql.escapeId(ids[Math.floor(i/2)]) : p;
+    }).join('');
 };
 
-exports.get = function(table, id, done) {
-    var sql = 'SELECT * FROM ' + mysql.escapeId(table) + ' WHERE id = ?';
-    return exports.query(sql, [id]);
+exports.create = function(table, params) {
+    return exports.query(
+        exports.sql('INSERT INTO [] SET ?', [table]),
+        params).then(function(result) {
+            return result.insertId;
+        }
+    );
+};
+
+exports.get = function(table, id) {
+    return exports.query(exports.sql('SELECT * FROM [] WHERE id = ?', [table]), [id]);
 };
 
 /*

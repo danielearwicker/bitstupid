@@ -20,7 +20,6 @@ exports.wrap = function(prefix, real) {
             real[key].apply(real, arguments);
         };
     });
-    log(wrapped);
     return wrapped;
 };
 

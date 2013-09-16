@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>bitstupid.com | create your own bit</title>
+    <link rel="stylesheet" type="text/css" href="static/css/global.css">
+</head>
+<body>
+    <h1>creating your own bit is easy!</h1>
+
+    <p>
+    </p>
+
+    <p>
+    </p>
+
+    <form action="images" method="post" enctype="multipart/form-data">
+        <table align="center">
+            <tr>
+                <th colspan="2">
+                    A bit is just a simple on/off switch,<br>
+                    so think of a pair of opposite words/phrases,<br>
+                    such as <em>sad</em> versus <em>happy</em>.
+                </th>
+            </tr>
+            <tr>
+                <td><input type="text" id="label0"></td>
+                <td><input type="text" id="label1"></td>
+            </tr>
+            <tr>
+                <th colspan="2">
+                    Then you need to upload two pictures.<br>
+                    Try not to commit copyright infringement!
+                </th>
+            </tr>
+            <tr>
+                {{#each images}}
+                <td>
+                    {{#if this}}
+                        <img src="images/{{this}}">
+                    {{else}}
+                        (Nothing)
+                    {{/if}}
+                </td>
+                {{/each}}
+            </tr>
+            <tr>
+                <td><input type="file" name="image0"></td>
+                <td><input type="file" name="image1"></td>
+            </tr>
+            <tr>
+                <th colspan="2">
+                    Click <input type="submit" name="upload" value="Save"> to preview your images
+                </th>
+            </tr>
+        </table>
+    </form>
+
+</body>
+</html>
