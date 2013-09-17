@@ -11,6 +11,7 @@ var Q = require('q');
 var log = require('./log');
 var config = require('./config');
 var views = require('./views');
+var images = require('./images');
 
 AWS.config.update(config.aws);
 log(AWS.config.credentials);
@@ -59,24 +60,39 @@ app.get('/images/:imgkey', logErrors(function(req, res) {
 
 app.post('/images', logErrors(function(req, res) {
 
+    log('Handling /images');
+
     var forEachImage = function(func) {
         return util.promiseRange(0, 2, function(i) {
-            func(req.files['image' + i], i);
+            return func(req.files['image' + i], i);
         });
     };
 
     return forEachImage(function(file, index) {
-        if (!file.type || !file.type.match(/^image\//)) {
-            log(file);
+
+        log('forEachImage - get contentType ' + index);
+
+        var contentType = file.headers['content-type'];
+        if (!contentType || !contentType.match(/^image\//)) {
             log('File upload is wrong type - ignoring');
             return false;
         } else {
+            log('readFile ' + index);
+
             return fs.readFile(file.path).then(function(image) {
+
+                log('checking length ' + index);
+
                 if (image.length == 0) {
                     log('File upload is zero length - ignoring');
                     return false;
                 } else {
+                    log('resizing ' + index);
+
                     return images.resize(image, 96, 96).then(function(resizedImage) {
+
+                        log('storing ' + index);
+
                         return s3.putObject({
                             Bucket: 'bitstupid-images',
                             Body: resizedImage,
@@ -88,12 +104,15 @@ app.post('/images', logErrors(function(req, res) {
             });
         }
     }).then(function() {
+        log('Okay - redirecting');
         res.redirect('create');
     }).fin(function() {
         return forEachImage(function(file) {
             log('Deleting temporary file: ' + file.path);
             return fs.unlink(file.path);
         });
+    }).catch(function(x) {
+        log('Caught', x);
     });
 }));
 
