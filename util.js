@@ -30,4 +30,30 @@ exports.promiseRange = function(start, count, each) {
         results.push(each(n));
     }
     return Q.all(results);
-}; 
+};
+
+exports.expressPromises = function(app) {
+    ['get', 'post'].forEach(function (methodName) {
+        var original = app[methodName];
+        app[methodName + 'Q'] = function(path, handler) {
+            original.call(app, path, function(req, res) {
+                return Q.fcall(handler, req).then(
+                    function(result) {
+                        if (result && result.contentType && result.body) {
+                            res.set('Content-Type', result.contentType);
+                            res.send(result.body);
+                        } else if (result && result.redirect) {
+                            res.redirect(result.redirect);
+                        } else {
+                            res.send(result);
+                        }
+                    },
+                    function(err) {
+                        res.send(500, JSON.stringify(err));
+                    }
+                );
+            });
+        };
+    });
+};
+

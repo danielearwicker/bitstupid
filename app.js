@@ -1,6 +1,7 @@
 var util = require('./util');
 
 var fs = util.promisify(require('fs'));
+var https = util.promisify(require('https'));
 
 var express = require('express');
 
@@ -11,6 +12,7 @@ var log = require('./log');
 var config = require('./config');
 var views = require('./views');
 var images = require('./images');
+var call = require('./call');
 
 AWS.config.update(config.aws);
 
@@ -19,22 +21,15 @@ var s3 = util.promisify(log.wrap('AWS.S3.', new AWS.S3({ apiVersion: '2006-03-01
 var app = express();
 app.use(express.bodyParser());
 app.use("/static", express.static('static'));
+util.expressPromises(app);
 
 var username = 'danielearwicker';
 
-app.get('/', function(req, res) {
-    res.send(views.home({ age: 41 }));
+app.getQ('/', function() {
+    return views.home({ user: 'not-implemented' });
 });
 
-var logErrors = function(handler) {
-    return function(req, res) {
-        return handler(req, res).catch(function(err) {
-            res.send(500, JSON.stringify(err));
-        });
-    };
-};
-
-app.get('/create', logErrors(function(req, res) {
+app.getQ('/create', function() {
     return util.promiseRange(0, 2, function(image) {
         var key = 'creating-' + username + '-'+ image;
         return s3.headObject({
@@ -42,21 +37,23 @@ app.get('/create', logErrors(function(req, res) {
             Key: key
         }).thenResolve(key);
     }).then(function(images) {
-        res.send(views.create({ images: images }));
+        return views.create({ images: images });
     });
-}));
+});
 
-app.get('/images/:imgkey', logErrors(function(req, res) {
+app.getQ('/images/:imgkey', function(req) {
     return s3.getObject({
         Bucket: 'bitstupid-images',
         Key: req.params.imgkey
     }).then(function(data) {
-        res.set('Content-Type', data.ContentType);
-        res.send(data.Body);
+        return {
+            contentType: data.ContentType,
+            body: data.body
+        };
     });
-}));
+});
 
-app.post('/images', logErrors(function(req, res) {
+app.postQ('/images', function(req) {
 
     var forEachImage = function(func) {
         return util.promiseRange(0, 2, function(i) {
@@ -87,16 +84,42 @@ app.post('/images', logErrors(function(req, res) {
             });
         }
     }).then(function() {
-        res.redirect('create');
+        return { redirect: 'create' }
     }).fin(function() {
         return forEachImage(function(file) {
             return fs.unlink(file.path);
         });
     });
-}));
+});
 
+app.getQ('/login', function() {
+    return views.login({ baseUrl: config.bitstupid.baseUrl });
+});
 
-app.get('/:username/:id/state', function(req, res) {
+app.postQ('/token', function(req) {
+    var token = req.body.token;
+    if (token.length !== 40) {
+        throw new Error('Token should be 40 characters');
+    } else {
+        return call.post({
+            host: 'rpxnow.com',
+            port: 443,
+            path: '/api/v2/auth_info',
+            data: {
+                token: token,
+                apiKey: config.janrain.apiKey,
+                format: 'json',
+                extended: false
+            }
+        }).then(function(janrainResult) {
+            return views.home({
+                user: JSON.stringify(janrainResult)
+            });
+        });
+    }
+});
+
+app.getQ('/:username/:id/state', function(req) {
 
     var key = req.params.username + ':' + req.params.id;
 
