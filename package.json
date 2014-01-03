@@ -11,7 +11,7 @@
     "handlebars": "1.0.x",
     "aws-sdk": "1.5.0",
     "gm": "1.12.2",
-    "mysql": "2.x",
+    "rethinkdb": "1.11.x",
     "q": "0.9.7"
   }
 }
