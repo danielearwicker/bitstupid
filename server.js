@@ -1,70 +1,59 @@
-var express = require('express')
+var express = require("express")
+var fs = require("fs");
+
 var app = express();
 
-var fs = require('fs');
-
-var dataDir = 'data';
-
-var dateStampNow = function() {
-    return new Date().toISOString() + '\n';
-};
-
-var dateStampSize = dateStampNow().length;
-
+var recordSize = 256;
+var dataDir = "data";
 if (!fs.existsSync(dataDir)) {
     fs.mkdir(dataDir); 
 }
 
-app.use("/", express.static('web'));
-
-app.get('/version', function(req, res) {
-    res.send('1');
-});
+app.use("/", express.static("static"));
 
 var getFileFromParams = function(req) {
-    return dataDir + '/' + req.params.username + '/' + req.params.id;
+    return dataDir + "/" + req.params.name;
 };
 
-app.get('/togglz/:username/:id', function(req, res) {
-    
-    fs.open(getFileFromParams(req), 'r', function(err, fd) {
+function respond(res, count, changes) {
+    res.send({
+        count: count,
+        changes: changes,
+        state: !!(count % 2)
+    });
+}
+
+app.get("/bits/:name", function(req, res) {
+    fs.open(getFileFromParams(req), "r", function(err, fd) {
         if (err) {
-            res.send(500, err.message);
+            respond(res, 0, []);
         } else {
             fs.fstat(fd, function(err, stats) {
                 if (err) {
                     res.send(500, err.message);
                 } else {
-                    var count = Math.floor(stats.size / dateStampSize);
+                    var count = Math.floor(stats.size / recordSize);
                     var skip = Math.min(req.query.skip || 0, count);
                     var take = Math.min(count - skip, req.query.take || 1);
-
                     if (take == 0) {
-                        res.send({
-                            count: count,
-                            offset: skip,
-                            changes: [],
-                            state: !!(count % 2)
-                        });
+                        respond(res, count, []);
                     } else {
-
-                        var byteStart = (count - (skip + take)) * dateStampSize﻿;
-                        var byteCount = take * dateStampSize;
-
-                        fs.read(fd, new Buffer(byteCount), 0, byteCount, byteStart﻿, function(err, bytesRead, buf) {
+                        var byteStart = (count - (skip + take)) * recordSize;
+                        var byteCount = take * recordSize;
+                        fs.read(fd, new Buffer(byteCount),
+                                0, byteCount, byteStart,
+                                function(err, bytesRead, buf) {
                             if (err) {
-                                res.send(500, err.message);
+                                respond(res, count, []);
                             } else {
-                                var changes = buf.toString().split('\n');
-                                changes.pop();
-                                changes.reverse();
-
-                                res.send({
-                                    count: count,
-                                    offset: skip,
-                                    changes: changes,
-                                    state: !!(count % 2)
-                                });
+                                var changes = [];
+                                for (var r = take - 1; r >= 0; r--) {
+                                    var start = r * recordSize;
+                                    var size = buf[start];
+                                    var recordBuffer = buf.slice(start + 1, start + size + 1);
+                                    changes.push(recordBuffer.toString().split("\n"));
+                                }
+                                respond(res, count, changes);
                             }
                         });
                     }
@@ -74,36 +63,18 @@ app.get('/togglz/:username/:id', function(req, res) {
     });
 });
 
-app.post('/togglz/:username/:id', function(req, res) {
-    var filename = getFileFromParams(req);
-    
-    if (req.query.set) {
-    
-        fs.open(getFileFromParams(req), 'r', function(err, fd) {
-            if (err) {
-                res.send(500, err.message);
-            } else {
-                fs.fstat(fd, function(err, stats) {
-                    if (err) {
-                        res.send(500, err.message);
-                    } else {
-                        var count = Math.floor(stats.size / dateStampSize);
-                        var state = !!(count % 2);
-
-                        if ((req.query.set == 'true') != state) {
-                            fs.appendFileSync(filename, dateStampNow());
-                            res.send({ state: !state });
-                        } else {
-                            res.send({ state: state, ignored: true });
-                        }
-                    }
-                });
-            }
-        });
-    } else {
-        fs.appendFileSync(filename, dateStampNow());
-        res.send({ toggled: true });
-    }
+app.post("/bits/:name/:from", function(req, res) {    
+    var recordBuffer = new Buffer(recordSize);
+    recordBuffer.fill(0);
+    var size = recordBuffer.write(new Date().toISOString() + "\n" + req.params.from, 1);
+    recordBuffer[0] = size;
+    fs.appendFile(getFileFromParams(req), recordBuffer, function(err) {
+        if (err) {
+            res.send({ error: err.message });
+        } else {
+            res.send({ toggled: true });
+        }
+    });
 });
 
 app.listen(3000);
