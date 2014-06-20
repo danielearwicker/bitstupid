@@ -1,17 +1,30 @@
 {
   "name": "bitstupid",
-  "description": "The most minimal personal status service",
-  "version": "0.0.1",
-  "repository": {
-      "type": "git",
-      "url": "https://github.com/danielearwicker/bitstupid.git"
+  "version": "0.1.0",
+  "description": "The ultimate in minimal social networking",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/danielearwicker/bitstupid.git"
+  },
+  "keywords": [
+    "stupid",
+    "social",
+    "networking",
+    "information",
+    "theory"
+  ],
+  "author": "Daniel Earwicker <dan@earwicker.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/danielearwicker/bitstupid/issues"
+  },
+  "homepage": "http://bitstupid.com",
   "dependencies": {
-    "express": "3.x",
-    "handlebars": "1.0.x",
-    "aws-sdk": "1.5.0",
-    "gm": "1.12.2",
-    "rethinkdb": "1.11.x",
-    "q": "0.9.7"
+    "express": "^4.4.3"
   }
 }
