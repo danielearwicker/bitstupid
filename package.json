@@ -25,6 +25,12 @@
   },
   "homepage": "http://bitstupid.com",
   "dependencies": {
-    "express": "^4.4.3"
+    "funkify": "^0.1.0",
+    "koa": "^0.8.0",
+    "koa-body-parser": "^1.1.0",
+    "koa-router": "^3.1.4",
+    "koa-static": "^1.4.5",
+    "redis": "^0.10.3",
+    "request": "^2.36.0"
   }
 }

@@ -1,80 +1,84 @@
-var express = require("express")
-var fs = require("fs");
+var funkify = require('funkify');
 
-var app = express();
+var request = funkify(require('request'));
 
-var recordSize = 256;
-var dataDir = "data";
-if (!fs.existsSync(dataDir)) {
-    fs.mkdir(dataDir); 
-}
+var config = require('../bitstupid-config.json');
+var data = require('./data');
 
-app.use("/", express.static("static"));
+var koa = require('koa');
 
-var getFileFromParams = function(req) {
-    return dataDir + "/" + req.params.name;
-};
+var app = koa();
+app.use(require('koa-static')(__dirname + '/static'));
+app.use(require('koa-body-parser')());
+app.use(require('koa-router')(app));
 
-function respond(res, count, changes) {
-    res.send({
-        count: count,
-        changes: changes,
-        state: !!(count % 2)
-    });
-}
-
-app.get("/bits/:name", function(req, res) {
-    fs.open(getFileFromParams(req), "r", function(err, fd) {
-        if (err) {
-            respond(res, 0, []);
-        } else {
-            fs.fstat(fd, function(err, stats) {
-                if (err) {
-                    res.send(500, err.message);
-                } else {
-                    var count = Math.floor(stats.size / recordSize);
-                    var skip = Math.min(req.query.skip || 0, count);
-                    var take = Math.min(count - skip, req.query.take || 1);
-                    if (take == 0) {
-                        respond(res, count, []);
-                    } else {
-                        var byteStart = (count - (skip + take)) * recordSize;
-                        var byteCount = take * recordSize;
-                        fs.read(fd, new Buffer(byteCount),
-                                0, byteCount, byteStart,
-                                function(err, bytesRead, buf) {
-                            if (err) {
-                                respond(res, count, []);
-                            } else {
-                                var changes = [];
-                                for (var r = take - 1; r >= 0; r--) {
-                                    var start = r * recordSize;
-                                    var size = buf[start];
-                                    var recordBuffer = buf.slice(start + 1, start + size + 1);
-                                    changes.push(recordBuffer.toString().split("\n"));
-                                }
-                                respond(res, count, changes);
-                            }
-                        });
-                    }
-                }
-            });
-        }
-    });
+app.get('/bits/:of', function* () {
+    this.body = yield data.readBit(this.params.of, this.query.skip, this.query.take);
+    for (var n = 0; n < this.body.changes.length; n++) {
+        this.body.changes[n].info = yield data.getInfo(this.body.changes[n].by);
+    }
 });
 
-app.post("/bits/:name/:from", function(req, res) {    
-    var recordBuffer = new Buffer(recordSize);
-    recordBuffer.fill(0);
-    var size = recordBuffer.write(new Date().toISOString() + "\n" + req.params.from, 1);
-    recordBuffer[0] = size;
-    fs.appendFile(getFileFromParams(req), recordBuffer, function(err) {
-        if (err) {
-            res.send({ error: err.message });
-        } else {
-            res.send({ toggled: true });
+app.post('/bits/:of', function* () {
+    this.body = yield data.toggleBit(this.params.of, 
+                    yield data.getNameFromSecret(this.request.body.secret));
+});
+
+app.get('/users/:name', function* () {
+    console.log(this.params.name);
+    this.body = yield data.getInfo(this.params.name);
+    console.log(this.body);
+});
+
+app.get(/^\/secrets\/(.+)$/, function* () {
+    var user = yield data.getNameFromSecret(this.params[0]);
+    this.body = {
+        name: user, 
+        info: yield data.getInfo(user) 
+    };
+});
+
+var providerPrefixes = {
+    'Twitter': 'tw',
+    'Facebook': 'fb',
+    'Google+': 'gp',
+    'Yahoo!': 'yh'
+};
+
+app.post('/janrain', function* () {
+    var token = this.request.body.token;
+    if (token.length !== 40) {
+        throw new Error('Token should be 40 characters');
+    }
+    
+    var info = JSON.parse((yield request.post({
+        uri: 'https://rpxnow.com/api/v2/auth_info',
+        form: {
+            token: token,
+            apiKey: config.janrain.apiKey,
+            format: 'json',
+            extended: false
         }
-    });
+    }))[1]).profile;
+    
+    var prefix = providerPrefixes[info.providerName];
+    if (!prefix) {
+        throw new Error('Unexpected providerName: ' + info.providerName + " in " + JSON.stringify(info, null, 4));
+    }
+
+    if (!info.preferredUsername) {
+        throw new Error('Unexpected missing preferredUsername: ' + JSON.stringify(info, null, 4));
+    }
+
+    var user = prefix + ':' + info.preferredUsername;
+    
+    yield data.setInfo(user, info);
+    
+    this.body = {
+        secret: yield data.getSecret(user),
+        name: user,
+        info: info
+    };
 });
 
 app.listen(3000);

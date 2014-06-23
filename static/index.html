@@ -2,8 +2,21 @@
 <html>
     <head>
         <title>bitstupid.com</title>
-        <script type="text/javascript" src="bitstupid.js"></script>
+        <script type="text/javascript" src="lib/jquery-2.1.1.min.js"></script>
+        <script type="text/javascript" src="lib/knockout-3.1.0.debug.js"></script>
+        <script type="text/javascript" src="lib/moment.min.js"></script>
+        <script type="text/javascript" src="client.js"></script>
+        <script type="text/javascript"
+                src="http://widget-cdn.rpxnow.com/js/lib/bitstupid/engage.js"
+                id="janrainAuthWidget"></script>
         <style>
+        #janrainEngageEmbed {
+            display: inline-block;
+        }
+        body {
+            background: #556;
+            color: white;
+        }
         .everything {
             position: absolute;
             left: 0;
@@ -19,25 +32,93 @@
             text-align: center;
             width: 100%;
             height: 100%;
-            
+            font-family: Helvetica;
+            font-size: 8pt;
         }
         .bit {
-            font-size: 200pt;
-            font-family: Courier;
+            display: inline-block;
+            background: #BCE;
+            border: 2px solid white;
+            border-radius: 10px;
+            margin: 10px;
+            padding: 10px;
+            color: black;
+            box-shadow: 10px 10px 5px #334;
         }
+        .bit a {
+            color: black;
+        }
+        .bit .value {
+            font-size: 100pt;
+            font-family: Courier;            
+        }
+
+        .user * {
+            vertical-align: middle;
+            position: relative;
+            top: -1px;
+        }
+        .user img {
+            width: 16px;
+            height: 16px;
+            margin-right: 4px;
+        }
+        
+        .timelineItem {
+            margin: 4px;
+        }
+        
+        .pseudoLink {
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        
+        a {
+            color: white;
+        }
+        
         </style>
     </head>
+    <script type="text/html" id="user-template">
+        <a class="user" data-bind="attr: { href: url }"><img data-bind="attr: { src: photo }"><span data-bind="text: preferredUsername"></span></a>
+    </script>
     <body>
+        
         <div class="everything">
-            <table><tr><td>
-            <div class="bit">1</div>
-            <div>
-                This bit belongs to danielearwicker
+            <table><tr><td>            
+            <!-- ko if: belongsTo -->
+            <div class="bit">
+                <div>
+                    This bit belongs to 
+                    <span data-bind="template: { name: 'user-template', data: belongsTo().info }"></span>
+                </div>
+                <div class="value" data-bind="text: bit"></div>
+                <div>Toggled by:</div>
+                <!-- ko foreach: changes -->
+                <div class="timelineItem">
+                    <span data-bind="template: { name: 'user-template', data: info }"></span> 
+                    <span data-bind="text: $parent.relativeTime(time)"></span>
+                </div>
+                <!-- /ko -->
             </div>
-            <div>
-                <button>Toggle</button>
+            <div data-bind="visible: !(!user() && (showSignIn() || !belongsTo()))">
+                <button data-bind="click: toggle">Flip it...</button>
             </div>
-            </td></tr></table>
+            <br>
+            <!-- /ko -->
+
+            <!-- ko if: user -->
+            If you're not 
+            <span data-bind="template: { name: 'user-template', data: user().info }"></span> 
+            please <span class="pseudoLink" data-bind="click: signOut">sign out</span>
+            <!-- /ko -->
+
+            <div data-bind="visible: !user() && (showSignIn() || !belongsTo())">
+                <div>If you're a user of one of these services, just sign in to continue...</div>
+                <br>
+                <div id="janrainEngageEmbed"></div>
+            </div>
+        </td></tr></table>
         </div>
     </body>
 </html>
