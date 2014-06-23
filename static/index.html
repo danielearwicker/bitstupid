@@ -38,6 +38,7 @@
             height: 100%;
             font-family: Helvetica;
         }
+        
         .bit {
             display: inline-block;
             background: #BCE;
@@ -53,13 +54,14 @@
         }
         .bit .value {
             font-size: 100pt;
-            font-family: Courier;            
+            font-family: Courier;   
+            cursor: pointer; 
         }
 
         .user * {
             vertical-align: middle;
             position: relative;
-            top: -2px;
+            top: -1px;
         }
         .user img {
             width: 16px;
@@ -68,12 +70,16 @@
         }
         
         .timelineItem {
-            margin: 4px;
+            margin: 7px;
         }
         
         .pseudoLink {
             text-decoration: underline;
             cursor: pointer;
+        }
+        
+        .spacer {
+            height: 10px;
         }
         
         a {
@@ -95,20 +101,41 @@
                     This bit belongs to 
                     <span data-bind="template: { name: 'user-template', data: belongsTo().info }"></span>
                 </div>
-                <div class="value" data-bind="text: bit"></div>
-                <div>Toggled by:</div>
+                
+                <!-- ko if: activity().length -->
+                <div>who has recently toggled...</div>
+                <!-- ko foreach: activity -->
+                <div class="timelineItem">
+                    <span data-bind="template: { name: 'user-template', data: info }"></span> 
+                    <span data-bind="text: $parent.relativeTime(time)"></span>
+                </div>
+                <!-- /ko -->
+                <!-- /ko -->
+                <!-- ko if: !activity().length -->
+                <div>who has never toggled any bits. :(</div>
+                <!-- /ko -->
+                <hr>
+                
+                <div class="value" title="Click to toggle" data-bind="text: bit, click: toggle"></div>
+                
+                <hr>
+                
+                <!-- ko if: changes().length -->
+                <div>This bit recently toggled by...</div>
                 <!-- ko foreach: changes -->
                 <div class="timelineItem">
                     <span data-bind="template: { name: 'user-template', data: info }"></span> 
                     <span data-bind="text: $parent.relativeTime(time)"></span>
                 </div>
                 <!-- /ko -->
+                <!-- /ko -->
+                <!-- ko if: !changes().length -->
+                <div>This bit has never been toggled. :(</div>
+                <!-- /ko -->
             </div>
-            <div data-bind="visible: !(!user() && (showSignIn() || !belongsTo()))">
-                <button data-bind="click: toggle">Flip it...</button>
-            </div>
-            <br>
             <!-- /ko -->
+
+            <div class="spacer"></div>
 
             <!-- ko if: user -->
             If you're not 
@@ -116,10 +143,22 @@
             please <span class="pseudoLink" data-bind="click: signOut">sign out</span>
             <!-- /ko -->
 
-            <div data-bind="visible: !user() && (showSignIn() || !belongsTo())">
-                <div>If you're a user of one of these services, just sign in to continue...</div>
+            <div data-bind="visible: !user()">
+                <div>If only you were signed in, you could toggle bits...</div>
                 <br>
                 <div id="janrainEngageEmbed"></div>
+            </div>
+            
+            <div>
+            <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+            <!-- bitstupid -->
+            <ins class="adsbygoogle"
+                 style="display:inline-block;width:728px;height:90px"
+                 data-ad-client="ca-pub-2989476729250342"
+                 data-ad-slot="1989785569"></ins>
+            <script>
+            (adsbygoogle = window.adsbygoogle || []).push({});
+            </script>
             </div>
         </td></tr></table>
         </div>

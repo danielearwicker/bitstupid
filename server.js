@@ -13,21 +13,27 @@ app.use(require('koa-body-parser')());
 app.use(require('koa-router')(app));
 
 app.get('/bits/:of', function* () {
-    this.body = yield data.readBit(this.params.of, this.query.skip, this.query.take);
+    this.body = yield data.readBit(this.params.of.toLowerCase(), this.query.skip, this.query.take);
     for (var n = 0; n < this.body.changes.length; n++) {
         this.body.changes[n].info = yield data.getInfo(this.body.changes[n].by);
     }
 });
 
+app.get('/activity/:by', function* () {
+    this.body = yield data.readActivity(this.params.by.toLowerCase(), this.query.skip, this.query.take);
+    for (var n = 0; n < this.body.activity.length; n++) {
+        this.body.activity[n].info = yield data.getInfo(this.body.activity[n].of);
+    }
+});
+
+
 app.post('/bits/:of', function* () {
-    this.body = yield data.toggleBit(this.params.of, 
+    this.body = yield data.toggleBit(this.params.of.toLowerCase(), 
                     yield data.getNameFromSecret(this.request.body.secret));
 });
 
 app.get('/users/:name', function* () {
-    console.log(this.params.name);
-    this.body = yield data.getInfo(this.params.name);
-    console.log(this.body);
+    this.body = yield data.getInfo(this.params.name.toLowerCase());
 });
 
 app.get(/^\/secrets\/(.+)$/, function* () {
@@ -70,7 +76,7 @@ app.post('/janrain', function* () {
         throw new Error('Unexpected missing preferredUsername: ' + JSON.stringify(info, null, 4));
     }
 
-    var user = prefix + ':' + info.preferredUsername;
+    var user = prefix + ':' + info.preferredUsername.toLowerCase();
     
     yield data.setInfo(user, info);
     

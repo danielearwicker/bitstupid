@@ -2,19 +2,18 @@
 var viewModel = {
     mode: ko.observable("home"),
     bit: ko.observable(""),
+    activity: ko.observable([]),
     changes: ko.observable([]),
     belongsTo: ko.observable(null),
     user: ko.observable(null),
     showSignIn: ko.observable(false)
 };
 
-var timeCounter = ko.observable(0);
 setInterval(function() {
-    timeCounter(timeCounter.peek() + 1);
-}, 5000);
+    updateBit();
+}, 10000);
 
 viewModel.relativeTime = function(time) {
-    timeCounter();
     return moment(time).fromNow();
 };
 
@@ -35,6 +34,18 @@ function updateBit() {
                         preferredUsername: change.info.preferredUsername,
                         photo: change.info.photo,
                         url: '#' + change.by
+                    }
+                };
+            }));
+        });
+        $.get('activity/' + viewModel.belongsTo().name + '?take=5').done(function(result) {
+            viewModel.activity(result.activity.map(function(action) {
+                return {
+                    time: action.at,
+                    info: {
+                        preferredUsername: action.info.preferredUsername,
+                        photo: action.info.photo,
+                        url: '#' + action.of
                     }
                 };
             }));
