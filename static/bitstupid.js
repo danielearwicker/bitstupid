@@ -109,8 +109,8 @@ var home = 'http://bitstupid.com';
 var viewModel = {
     address: ko.observable(home),
     bit: ko.observable(""),
-    activity: ko.observable([]),
-    changes: ko.observable([]),
+    activity: ko.observableArray(),
+    changes: ko.observableArray(),
     belongsTo: ko.observable(null),
     user: ko.observable(null),
     showSignIn: ko.observable(false)
@@ -130,6 +130,30 @@ ko.computed(function() {
     }
 });
 
+function findSimilarItem(ar, item) {
+    var similar;
+    ar.some(function(other) {
+        return similar = (other.time === item.time && other.info.url === item.info.url) 
+                        && item;
+    });
+    return similar;
+}
+
+function updateList(list, items) {
+    list.peek().filter(function(existing) {
+        return !findSimilarItem(items, existing);
+    }).forEach(function(dead) {
+        list.remove(dead);
+    });
+    items = items.slice(0);
+    items.reverse();
+    items.forEach(function(item) {
+        if (!findSimilarItem(list.peek(), item)) {
+            list.unshift(item);
+        }
+    });
+}
+
 function updateBit() {
     if (viewModel.belongsTo()) {
         
@@ -137,7 +161,7 @@ function updateBit() {
         
         $.get('bits/' + viewModel.belongsTo().name + '?take=5').done(function(result) {
             viewModel.bit(result.state ? 1 : 0);
-            viewModel.changes(result.changes.map(function(change) {
+            updateList(viewModel.changes, result.changes.map(function(change) {
                 return {
                     time: change.at,
                     info: {
@@ -149,7 +173,7 @@ function updateBit() {
             }));
         });
         $.get('activity/' + viewModel.belongsTo().name + '?take=5').done(function(result) {
-            viewModel.activity(result.activity.map(function(action) {
+            updateList(viewModel.activity, result.activity.map(function(action) {
                 return {
                     time: action.at,
                     info: {
