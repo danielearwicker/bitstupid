@@ -11,11 +11,15 @@ var viewModel = {
     showSignIn: ko.observable(false)
 };
 
+var timeRefresher = ko.observable(0);
+
 setInterval(function() {
     updateBit();
+    timeRefresher(timeRefresher.peek() + 1);
 }, 10000);
 
 viewModel.relativeTime = function(time) {
+    timeRefresher();
     return moment(time).fromNow();
 };
 
