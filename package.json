@@ -32,5 +32,9 @@
     "koa-static": "^1.4.5",
     "redis": "^0.10.3",
     "request": "^2.36.0"
+  },
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-contrib-concat": "^0.4.0"
   }
 }

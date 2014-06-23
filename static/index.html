@@ -3,10 +3,7 @@
     <head>
         <title>bitstupid.com</title>
         <meta name="viewport" content="width = 400, initial-scale = 1.3">
-        <script type="text/javascript" src="lib/jquery-2.1.1.min.js"></script>
-        <script type="text/javascript" src="lib/knockout-3.1.0.debug.js"></script>
-        <script type="text/javascript" src="lib/moment.min.js"></script>
-        <script type="text/javascript" src="client.js"></script>
+        <script type="text/javascript" src="bitstupid.js"></script>
         <script type="text/javascript"
                 src="http://widget-cdn.rpxnow.com/js/lib/bitstupid/engage.js"
                 id="janrainAuthWidget"></script>
@@ -37,6 +34,10 @@
             width: 100%;
             height: 100%;
             font-family: Helvetica;
+        }
+        
+        .shareAddress {
+            width: 300px;
         }
         
         .bit {
@@ -95,80 +96,90 @@
         
         <div class="everything">
             <table><tr><td>            
-            <!-- ko if: belongsTo -->
-            <div class="bit">
+                <div class="bitstupidApp">
+            
+                    <div>share this page:</div>
+                    <a data-bind="text: address, attr: { href: address }"></a>
+
+                    <div class="spacer"></div>
+                
+                    <!-- ko if: belongsTo -->
+                    <div class="bit">
+                        <div>
+                            This bit belongs to 
+                            <span data-bind="template: { name: 'user-template', data: belongsTo().info }"></span>
+                        </div>
+                
+                        <!-- ko if: activity().length -->
+                        <div>who has recently toggled...</div>
+                        <!-- ko foreach: activity -->
+                        <div class="timelineItem">
+                            <span data-bind="template: { name: 'user-template', data: info }"></span> 
+                            <span data-bind="text: $parent.relativeTime(time)"></span>
+                        </div>
+                        <!-- /ko -->
+                        <!-- /ko -->
+                        <!-- ko if: !activity().length -->
+                        <div>who has never toggled any bits. :(</div>
+                        <!-- /ko -->
+                        <hr>
+                
+                        <div class="value" title="Click to toggle" data-bind="text: bit, click: toggle"></div>
+                
+                        <hr>
+                
+                        <!-- ko if: changes().length -->
+                        <div>This bit recently toggled by...</div>
+                        <!-- ko foreach: changes -->
+                        <div class="timelineItem">
+                            <span data-bind="template: { name: 'user-template', data: info }"></span> 
+                            <span data-bind="text: $parent.relativeTime(time)"></span>
+                        </div>
+                        <!-- /ko -->
+                        <!-- /ko -->
+                        <!-- ko if: !changes().length -->
+                        <div>This bit has never been toggled. :(</div>
+                        <!-- /ko -->
+                    </div>
+                    <!-- /ko -->
+
+                    <div class="spacer"></div>
+
+                    <!-- ko if: user -->
+                    If you're not 
+                    <span data-bind="template: { name: 'user-template', data: user().info }"></span> 
+                    please <span class="pseudoLink" data-bind="click: signOut">sign out</span>
+                    <!-- /ko -->
+
+                    <div data-bind="visible: !user()">
+                        <div>If only you were signed in, you could toggle bits...</div>
+                        <br>
+                        <div id="janrainEngageEmbed"></div>
+                    </div>
+            
+                    <div class="spacer"></div>
+            
+                    <div>The ultimate in minimalist communication</div>
+                    <div>"one bit each"</div>
+                    <div>&copy; 2014 bitstupid.com</div>
+                </div>
+            
+                <div class="spacer"></div>
+
                 <div>
-                    This bit belongs to 
-                    <span data-bind="template: { name: 'user-template', data: belongsTo().info }"></span>
+                    <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+                    <!-- smallerbitstupid -->
+                    <ins class="adsbygoogle"
+                         style="display:inline-block;width:320px;height:100px"
+                         data-ad-client="ca-pub-2989476729250342"
+                         data-ad-slot="9373451568"></ins>
+                    <script>
+                    (adsbygoogle = window.adsbygoogle || []).push({});
+                    </script>
                 </div>
-                
-                <!-- ko if: activity().length -->
-                <div>who has recently toggled...</div>
-                <!-- ko foreach: activity -->
-                <div class="timelineItem">
-                    <span data-bind="template: { name: 'user-template', data: info }"></span> 
-                    <span data-bind="text: $parent.relativeTime(time)"></span>
-                </div>
-                <!-- /ko -->
-                <!-- /ko -->
-                <!-- ko if: !activity().length -->
-                <div>who has never toggled any bits. :(</div>
-                <!-- /ko -->
-                <hr>
-                
-                <div class="value" title="Click to toggle" data-bind="text: bit, click: toggle"></div>
-                
-                <hr>
-                
-                <!-- ko if: changes().length -->
-                <div>This bit recently toggled by...</div>
-                <!-- ko foreach: changes -->
-                <div class="timelineItem">
-                    <span data-bind="template: { name: 'user-template', data: info }"></span> 
-                    <span data-bind="text: $parent.relativeTime(time)"></span>
-                </div>
-                <!-- /ko -->
-                <!-- /ko -->
-                <!-- ko if: !changes().length -->
-                <div>This bit has never been toggled. :(</div>
-                <!-- /ko -->
+    
+                </td></tr></table>
             </div>
-            <!-- /ko -->
-
-            <div class="spacer"></div>
-
-            <!-- ko if: user -->
-            If you're not 
-            <span data-bind="template: { name: 'user-template', data: user().info }"></span> 
-            please <span class="pseudoLink" data-bind="click: signOut">sign out</span>
-            <!-- /ko -->
-
-            <div data-bind="visible: !user()">
-                <div>If only you were signed in, you could toggle bits...</div>
-                <br>
-                <div id="janrainEngageEmbed"></div>
-            </div>
-            
-            <div class="spacer"></div>
-                        
-            <div>
-                <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
-                <!-- smallerbitstupid -->
-                <ins class="adsbygoogle"
-                     style="display:inline-block;width:320px;height:100px"
-                     data-ad-client="ca-pub-2989476729250342"
-                     data-ad-slot="9373451568"></ins>
-                <script>
-                (adsbygoogle = window.adsbygoogle || []).push({});
-                </script>
-            </div>
-            
-            <div class="spacer"></div>
-            
-            <div>The ultimate in minimalist communication</div>
-            <div>"one bit each"</div>
-            <div>&copy; 2014 bitstupid.com</div>
-        </td></tr></table>
-        </div>
-    </body>
+        
+        </body>
 </html>

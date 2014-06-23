@@ -1,6 +1,8 @@
 
+var home = 'http://bitstupid.com';
+
 var viewModel = {
-    mode: ko.observable("home"),
+    address: ko.observable(home),
     bit: ko.observable(""),
     activity: ko.observable([]),
     changes: ko.observable([]),
@@ -25,6 +27,9 @@ ko.computed(function() {
 
 function updateBit() {
     if (viewModel.belongsTo()) {
+        
+        viewModel.address(home + '#' + viewModel.belongsTo().name);
+        
         $.get('bits/' + viewModel.belongsTo().name + '?take=5').done(function(result) {
             viewModel.bit(result.state ? 1 : 0);
             viewModel.changes(result.changes.map(function(change) {
@@ -81,13 +86,13 @@ function route() {
                 name: hash,
                 info: info
             });
-        })
+        });
     }
 }
 
 window.onload = function() {
     route();
-    ko.applyBindings(viewModel);
+    ko.applyBindings(viewModel, $('.bitstupidApp')[0]);
 };
 
 window.onhashchange = route;
@@ -150,3 +155,4 @@ function janrainWidgetOnload() {
     var s = document.getElementsByTagName('script')[0];
     s.parentNode.insertBefore(e, s);
 })();
+
