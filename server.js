@@ -1,4 +1,5 @@
 var funkify = require('funkify');
+var ay = require('ay');
 
 var request = funkify(require('request'));
 
@@ -13,19 +14,30 @@ app.use(require('koa-body-parser')());
 app.use(require('koa-router')(app));
 
 app.get('/bits/:of', function* () {
-    this.body = yield data.readBit(this.params.of.toLowerCase(), this.query.skip, this.query.take);
-    for (var n = 0; n < this.body.changes.length; n++) {
-        this.body.changes[n].info = yield data.getInfo(this.body.changes[n].by);
-    }
+    var bit = yield data.readBit(
+        this.params.of.toLowerCase(), 
+        this.query.skip, 
+        this.query.take);
+
+    yield ay(bit.changes).forEach(function* (change) {
+        change.info = yield data.getInfo(change.by);
+    });
+
+    this.body = bit;
 });
 
 app.get('/activity/:by', function* () {
-    this.body = yield data.readActivity(this.params.by.toLowerCase(), this.query.skip, this.query.take);
-    for (var n = 0; n < this.body.activity.length; n++) {
-        this.body.activity[n].info = yield data.getInfo(this.body.activity[n].of);
-    }
-});
+    var user = yield data.readActivity(
+        this.params.by.toLowerCase(), 
+        this.query.skip, 
+        this.query.take);
 
+    yield ay(user.activity).forEach(function* (update) {
+        update.info = yield data.getInfo(update.of);
+    });
+
+    this.body = user;
+});
 
 app.post('/bits/:of', function* () {
     this.body = yield data.toggleBit(this.params.of.toLowerCase(), 
