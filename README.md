@@ -1,5 +1,3 @@
-== bitstupid
-
 See semi-explanatory blogpost at:
 
 http://smellegantcode.wordpress.com/2014/06/25/implementing-a-minimal-social-network-in-node-with-generators-and-thunks/
