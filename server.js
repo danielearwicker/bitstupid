@@ -55,10 +55,16 @@ app.get('/top', function* () {
     
     this.body = { 
         users: yield ay(users).map(function* (name) {
-            return yield data.getInfo(name);            
-        }), 
+            return { 
+                name: name,
+                info: yield data.getInfo(name)
+            }; 
+        }),
         bits: yield ay(bits).map(function* (name) {
-            return yield data.getInfo(name);            
+            return { 
+                name: name,
+                info: yield data.getInfo(name)
+            };
         })
     };
 });

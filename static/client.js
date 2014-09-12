@@ -54,6 +54,14 @@ function updateList(list, items) {
     });
 }
 
+function topItem(item) {
+    return !item ? null : {
+        preferredUsername: item.info.preferredUsername,
+        photo: item.info.photo,
+        url: '#' + item.name
+    };
+}
+
 function updateBit() {
     if (viewModel.belongsTo()) {
         
@@ -90,9 +98,8 @@ function updateBit() {
         var rows = [];
         for (var n = 0; n < 10; n++) {
             rows.push({
-                pos: n + 1,
-                user: result.users[n],
-                bit: result.bits[n]
+                user: topItem(result.users[n]),
+                bit: topItem(result.bits[n])
             });
         }
         viewModel.top(rows);
