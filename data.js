@@ -3,6 +3,37 @@ var funkify = require('funkify');
 var redis = funkify(require('redis').createClient());
 var crypto = funkify(require('crypto'));
 
+var co = require('co');
+
+var upgrade = function* () {
+    if (yield redis.exists('topBits')) {
+        console.log('No need to upgrade');
+        return;
+    }
+    
+    console.log('Upgrading...');
+    var count = yield redis.llen('log');
+    var changes = yield redis.lrange('log', 0, count);
+    
+    for (var c = 0; c < changes.length; c++) {
+        var change = JSON.parse(changes[c]);
+        yield redis.zincrby('topBits', 1, change.of);
+        yield redis.zincrby('topUsers', 1, change.by);
+    }
+};
+
+co(upgrade)(function(err, res) {
+    console.log('Upgrade finished', err, res);
+});
+
+exports.topUsers = function *(count) {
+    return yield redis.zrevrange('topUsers', 0, count); 
+};
+
+exports.topBits = function *(count) {
+    return yield redis.zrevrange('topBits', 0, count); 
+};
+
 exports.toggleBit = function* (of, by) {
 
     var at = new Date();
@@ -10,6 +41,8 @@ exports.toggleBit = function* (of, by) {
     var count = yield redis.lpush('bit:' + of, JSON.stringify({ at: at, by: by }));
     yield redis.lpush('activity:' + by, JSON.stringify({ at: at, of: of }));
     yield redis.lpush('log', JSON.stringify({ at: at, by: by, of: of }));
+    yield redis.zincrby('topBits', 1, of);
+    yield redis.zincrby('topUsers', 1, by);
 
     return {
         count: count,

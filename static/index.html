@@ -86,7 +86,10 @@
         a {
             color: white;
         }
-        
+                
+        .hallOfFame td {
+            width: 50%;
+        }
         </style>
     </head>
     <script type="text/html" id="user-template">
@@ -145,6 +148,35 @@
 
                     <div class="spacer"></div>
 
+                    <div>HALL OF FAME</div>
+                    
+                    <table class="hallOfFame">
+                        <thead>
+                            <tr>
+                                <td>Most toggled bits</td>
+                                <td>Most active users</td>
+                            </tr>
+                        </thead>
+                        <tbody data-bind="foreach: top">
+                            <tr>
+                                <!-- ko if: bit -->
+                                    <td data-bind="template: { name: 'user-template', data: bit }"></td>
+                                <!-- /ko -->
+                                <!-- ko if: !bit -->
+                                    <td></td>
+                                <!-- /ko -->                                
+                                <!-- ko if: user -->
+                                    <td data-bind="template: { name: 'user-template', data: user }"></td>
+                                <!-- /ko -->
+                                <!-- ko if: !user -->
+                                    <td></td>
+                                <!-- /ko -->
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <div class="spacer"></div>
+                    
                     <!-- ko if: user -->
                     If you're not 
                     <span data-bind="template: { name: 'user-template', data: user().info }"></span> 

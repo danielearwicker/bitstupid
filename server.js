@@ -41,11 +41,26 @@ app.get('/activity/:by', function* () {
 
 app.post('/bits/:of', function* () {
     this.body = yield data.toggleBit(this.params.of.toLowerCase(), 
-                    yield data.getNameFromSecret(this.request.body.secret));
+                yield data.getNameFromSecret(this.request.body.secret));
 });
 
 app.get('/users/:name', function* () {
     this.body = yield data.getInfo(this.params.name.toLowerCase());
+});
+
+app.get('/top', function* () {
+    
+    var users = yield data.topUsers(10),
+        bits = yield data.topBits(10);
+    
+    this.body = { 
+        users: yield ay(users).map(function* (name) {
+            return yield data.getInfo(name);            
+        }), 
+        bits: yield ay(bits).map(function* (name) {
+            return yield data.getInfo(name);            
+        })
+    };
 });
 
 app.get(/^\/secrets\/(.+)$/, function* () {

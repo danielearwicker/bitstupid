@@ -8,7 +8,8 @@ var viewModel = {
     changes: ko.observableArray(),
     belongsTo: ko.observable(null),
     user: ko.observable(null),
-    showSignIn: ko.observable(false)
+    showSignIn: ko.observable(false),
+    top: ko.observable()
 };
 
 var timeRefresher = ko.observable(0);
@@ -84,6 +85,18 @@ function updateBit() {
             }));
         });
     }
+    
+    $.get('top').done(function(result) {        
+        var rows = [];
+        for (var n = 0; n < 10; n++) {
+            rows.push({
+                pos: n + 1,
+                user: result.users[n],
+                bit: result.bits[n]
+            });
+        }
+        viewModel.top(rows);
+    });
 }
 
 ko.computed(function() {
