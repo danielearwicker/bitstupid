@@ -48,23 +48,25 @@ app.get('/users/:name', function* () {
     this.body = yield data.getInfo(this.params.name.toLowerCase());
 });
 
-app.get('/top', function* () {
+app.get('/stats', function* () {
     
     var users = yield data.topUsers(10),
-        bits = yield data.topBits(10);
-    
+        bits = yield data.topBits(10),
+        log = yield data.log(20);
+
     this.body = { 
         users: yield ay(users).map(function* (name) {
-            return { 
-                name: name,
-                info: yield data.getInfo(name)
-            }; 
+            return yield data.getInfo(name);            
         }),
         bits: yield ay(bits).map(function* (name) {
-            return { 
-                name: name,
-                info: yield data.getInfo(name)
-            };
+            return yield data.getInfo(name);
+        }),
+        log: yield ay(log).map(function* (event) {
+            return {
+                at: event.at,
+                by: yield data.getInfo(event.by),
+                of: yield data.getInfo(event.of),
+            }
         })
     };
 });

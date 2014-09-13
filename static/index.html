@@ -80,15 +80,29 @@
         }
         
         .spacer {
-            height: 10px;
+            height: 20px;
         }
         
         a {
             color: white;
         }
                 
+        .hallOfFame {
+            margin: 0 auto;
+            max-width: 400px;
+        }
+        
         .hallOfFame td {
             width: 50%;
+        }
+        
+        .latestGossip {
+            margin: 0 auto;
+            max-width: 600px;            
+        }
+        
+        .latestGossip td {
+            width: 33%;
         }
         </style>
     </head>
@@ -171,6 +185,27 @@
                                 <!-- ko if: !user -->
                                     <td></td>
                                 <!-- /ko -->
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="spacer"></div>
+
+                    <div>LATEST GOSSIP</div>
+                    
+                    <table class="latestGossip">
+                        <thead>
+                            <tr>
+                                <td>Who's bit was toggled?</td>
+                                <td>Who toggled it?</td>
+                                <td>When did it happen?</td>
+                            </tr>
+                        </thead>
+                        <tbody data-bind="foreach: log">
+                            <tr>
+                                <td data-bind="template: { name: 'user-template', data: bit }"></td>
+                                <td data-bind="template: { name: 'user-template', data: user }"></td>
+                                <td data-bind="text: $parent.relativeTime(time)"></td>
                             </tr>
                         </tbody>
                     </table>

@@ -9,7 +9,8 @@ var viewModel = {
     belongsTo: ko.observable(null),
     user: ko.observable(null),
     showSignIn: ko.observable(false),
-    top: ko.observable()
+    top: ko.observable(),
+    log: ko.observable()
 };
 
 var timeRefresher = ko.observable(0);
@@ -56,9 +57,9 @@ function updateList(list, items) {
 
 function topItem(item) {
     return !item ? null : {
-        preferredUsername: item.info.preferredUsername,
-        photo: item.info.photo,
-        url: '#' + item.name
+        preferredUsername: item.preferredUsername,
+        photo: item.photo,
+        url: '#' + item.bitstupidName
     };
 }
 
@@ -94,15 +95,23 @@ function updateBit() {
         });
     }
     
-    $.get('top').done(function(result) {        
+    $.get('stats').done(function(stats) {        
         var rows = [];
         for (var n = 0; n < 10; n++) {
             rows.push({
-                user: topItem(result.users[n]),
-                bit: topItem(result.bits[n])
+                user: topItem(stats.users[n]),
+                bit: topItem(stats.bits[n]),
             });
         }
         viewModel.top(rows);
+        
+        viewModel.log(stats.log.map(function(event) {
+            return {
+                time: event.at,
+                user: topItem(event.by),
+                bit: topItem(event.of)
+            };
+        }))
     });
 }
 

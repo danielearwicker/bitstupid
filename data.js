@@ -26,12 +26,16 @@ co(upgrade)(function(err, res) {
     console.log('Upgrade finished', err, res);
 });
 
-exports.topUsers = function *(count) {
+exports.topUsers = function* (count) {
     return yield redis.zrevrange('topUsers', 0, count); 
 };
 
-exports.topBits = function *(count) {
+exports.topBits = function* (count) {
     return yield redis.zrevrange('topBits', 0, count); 
+};
+
+exports.log = function* (count) {
+    return (yield redis.lrange('log', 0, count)).map(JSON.parse); 
 };
 
 exports.toggleBit = function* (of, by) {
@@ -111,6 +115,7 @@ exports.getInfo = function* (of) {
     if (!info) {
         throw new Error('Unrecognised user: ' + of);
     }
+    info.bitstupidName = of;
     return info;
 };
 
